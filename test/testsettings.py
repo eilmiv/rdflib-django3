@@ -4,6 +4,8 @@ Settings for testing the application.
 from django.conf.global_settings import *  # noqa
 import os
 
+del STORAGES
+
 DEBUG = True
 SECRET_KEY = "FKJSLSOIIDSPOSOPDS"
 

@@ -240,7 +240,7 @@ class DjangoStore(rdflib.store.Store):
     ######################
     # NAMESPACE MANAGEMENT
 
-    def bind(self, prefix, namespace):
+    def bind(self, prefix, namespace, override=True):
         # is fixed
         if models.NamespaceModel.objects.filter(
             Q(uri=namespace) | Q(prefix=prefix),

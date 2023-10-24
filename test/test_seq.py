@@ -4,7 +4,7 @@ Taken from https://github.com/RDFLib/rdflib/blob/master/test/test_seq.py
 from django.test import TestCase
 
 from rdflib.term import URIRef
-from rdflib.graph import Graph
+from rdflib.graph import Graph, Seq
 from rdflib_django.store import DjangoStore
 
 
@@ -16,7 +16,7 @@ class SeqTest(TestCase):
     def setUp(self):
         store = self.store = Graph(store=DjangoStore())
         store.open(None)
-        store.parse(data=s)
+        store.parse(data=s, format="xml")
 
     def tearDown(self):
         self.store.close()
@@ -25,7 +25,7 @@ class SeqTest(TestCase):
         """
         Tests sequences.
         """
-        items = self.store.seq(URIRef("http://example.org/Seq"))
+        items = Seq(self.store, URIRef("http://example.org/Seq"))
         self.assertEquals(len(items), 6)
         self.assertEquals(
             items[-1], URIRef("http://example.org/six")
