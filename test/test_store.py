@@ -93,3 +93,18 @@ class GraphTest(test.TestCase):
         self.assertEquals(self.graph.value(artis, EX['date']), date_literal)
         self.assertEquals(self.graph.value(artis, EX['bool']), bool_literal)
         self.assertEquals(self.graph.value(artis, EX['number']), number_literal)
+
+    def test_falsy_literals(self):
+        self.graph.add((artis, EX["prop"], Literal("")))
+        self.graph.add((artis, EX["prop"], Literal(False)))
+
+        self.assertEquals(
+            list(self.graph.triples((artis, EX["prop"], Literal("")))),
+            [(artis, EX["prop"], Literal(""))]
+        )
+
+        self.graph.remove((artis, EX["prop"], Literal("")))
+        self.assertEquals(
+            list(self.graph),
+            [(artis, EX["prop"], Literal(False))]
+        )

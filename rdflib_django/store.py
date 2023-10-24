@@ -10,6 +10,7 @@ from django.db.models import Q
 from . import models
 
 DEFAULT_STORE = "Default Store"
+ANY = None
 
 
 def _get_query_sets_for_object(o):
@@ -22,7 +23,7 @@ def _get_query_sets_for_object(o):
 
     This method always returns a list of size at least one.
     """  # noqa: E501
-    if o:
+    if o != ANY:
         if isinstance(o, Literal):
             query_sets = [models.LiteralStatement.objects]
         else:
@@ -167,11 +168,11 @@ class DjangoStore(rdflib.store.Store):
         filter_parameters = dict()
         if named_graph is not None:
             filter_parameters['context_id'] = named_graph.id
-        if s:
+        if s != ANY:
             filter_parameters['subject'] = s
-        if p:
+        if p != ANY:
             filter_parameters['predicate'] = p
-        if o:
+        if o != ANY:
             filter_parameters['object'] = o
 
         query_sets = [qs.filter(**filter_parameters) for qs in query_sets]
@@ -190,11 +191,11 @@ class DjangoStore(rdflib.store.Store):
         filter_parameters = dict()
         if named_graph is not None:
             filter_parameters['context_id'] = named_graph.id
-        if s:
+        if s != ANY:
             filter_parameters['subject'] = s
-        if p:
+        if p != ANY:
             filter_parameters['predicate'] = p
-        if o:
+        if o != ANY:
             filter_parameters['object'] = o
 
         query_sets = [qs.filter(**filter_parameters) for qs in query_sets]
