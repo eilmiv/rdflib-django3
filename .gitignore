@@ -1,5 +1,7 @@
 .*project
 *.py[co]
+.vscode
+.venv
 
 # Packages
 *.egg

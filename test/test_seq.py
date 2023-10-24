@@ -2,9 +2,9 @@
 Taken from https://github.com/RDFLib/rdflib/blob/master/test/test_seq.py
 """
 from django.test import TestCase
-
+from rdflib.graph import Graph, Seq
 from rdflib.term import URIRef
-from rdflib.graph import Graph
+
 from rdflib_django.store import DjangoStore
 
 
@@ -15,8 +15,8 @@ class SeqTest(TestCase):
 
     def setUp(self):
         store = self.store = Graph(store=DjangoStore())
-        store.open(None)
-        store.parse(data=s)
+        store.open("")
+        store.parse(data=s, format="xml")
 
     def tearDown(self):
         self.store.close()
@@ -25,14 +25,10 @@ class SeqTest(TestCase):
         """
         Tests sequences.
         """
-        items = self.store.seq(URIRef("http://example.org/Seq"))
-        self.assertEquals(len(items), 6)
-        self.assertEquals(
-            items[-1], URIRef("http://example.org/six")
-        )
-        self.assertEquals(
-            items[2], URIRef("http://example.org/three")
-        )
+        items = Seq(self.store, URIRef("http://example.org/Seq"))
+        self.assertEqual(len(items), 6)
+        self.assertEqual(items[-1], URIRef("http://example.org/six"))
+        self.assertEqual(items[2], URIRef("http://example.org/three"))
         # just make sure we can serialize
         self.store.serialize()
 

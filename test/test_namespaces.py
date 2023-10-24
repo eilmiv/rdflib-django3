@@ -4,8 +4,8 @@ Unittests for namespace management.
 from django.test import TestCase
 from rdflib.graph import Graph
 from rdflib.term import URIRef
-from rdflib_django.store import DjangoStore
 
+from rdflib_django.store import DjangoStore
 
 XML_NAMESPACE = ("xml", URIRef("http://www.w3.org/XML/1998/namespace"))
 RDF_NAMESPACE = ("rdf", URIRef("http://www.w3.org/1999/02/22-rdf-syntax-ns#"))

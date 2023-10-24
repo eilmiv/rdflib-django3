@@ -1,11 +1,12 @@
 """
 Essential implementation of the Store interface defined by RDF lib.
 """
+from typing import Optional
+
 import rdflib
+from django.db.models import Q
 from rdflib.store import NO_STORE, VALID_STORE
 from rdflib.term import Identifier, Literal
-
-from django.db.models import Q
 
 from . import models
 
@@ -22,7 +23,7 @@ def _get_query_sets_for_object(o):
 
     This method always returns a list of size at least one.
     """  # noqa: E501
-    if o:
+    if o is not None:
         if isinstance(o, Literal):
             query_sets = [models.LiteralStatement.objects]
         else:
@@ -30,7 +31,7 @@ def _get_query_sets_for_object(o):
     else:
         query_sets = [
             models.URIStatement.objects,
-            models.LiteralStatement.objects
+            models.LiteralStatement.objects,
         ]
     return query_sets
 
@@ -72,10 +73,16 @@ class DjangoStore(rdflib.store.Store):
 
     store = None
 
-    def __init__(self, configuration=None, identifier=DEFAULT_STORE):
+    def __init__(
+        self,
+        configuration: Optional[str] = None,
+        identifier: Optional[str] = None,
+    ):
+        if identifier is None:
+            identifier = DEFAULT_STORE
         self.identifier = identifier
         super(DjangoStore, self).__init__(configuration, identifier)
-        self.open(create=True)
+        self.open(configuration, create=True)
 
     def _get_named_graph(self, context):
         """
@@ -87,7 +94,7 @@ class DjangoStore(rdflib.store.Store):
             identifier=context.identifier, store=self.store
         )[0]
 
-    def open(self, configuration=None, create=False):
+    def open(self, configuration: str, create: bool = False) -> Optional[int]:
         """
         Opens the underlying store. This is only necessary when opening
         a store with another identifier than the default identifier.
@@ -154,7 +161,7 @@ class DjangoStore(rdflib.store.Store):
             predicate=p,
             object=o,
             context=named_graph,
-            )
+        )
 
     def remove(self, triple, context=None):
         """
@@ -166,13 +173,13 @@ class DjangoStore(rdflib.store.Store):
 
         filter_parameters = dict()
         if named_graph is not None:
-            filter_parameters['context_id'] = named_graph.id
-        if s:
-            filter_parameters['subject'] = s
-        if p:
-            filter_parameters['predicate'] = p
-        if o:
-            filter_parameters['object'] = o
+            filter_parameters["context_id"] = named_graph.id
+        if s is not None:
+            filter_parameters["subject"] = s
+        if p is not None:
+            filter_parameters["predicate"] = p
+        if o is not None:
+            filter_parameters["object"] = o
 
         query_sets = [qs.filter(**filter_parameters) for qs in query_sets]
 
@@ -189,13 +196,13 @@ class DjangoStore(rdflib.store.Store):
 
         filter_parameters = dict()
         if named_graph is not None:
-            filter_parameters['context_id'] = named_graph.id
-        if s:
-            filter_parameters['subject'] = s
-        if p:
-            filter_parameters['predicate'] = p
-        if o:
-            filter_parameters['object'] = o
+            filter_parameters["context_id"] = named_graph.id
+        if s is not None:
+            filter_parameters["subject"] = s
+        if p is not None:
+            filter_parameters["predicate"] = p
+        if o is not None:
+            filter_parameters["object"] = o
 
         query_sets = [qs.filter(**filter_parameters) for qs in query_sets]
 
@@ -215,19 +222,24 @@ class DjangoStore(rdflib.store.Store):
             return (
                 models.LiteralStatement.objects.filter(
                     context_id=named_graph.id
-                ).count() +
-                models.URIStatement.objects.filter(
+                ).count()
+                + models.URIStatement.objects.filter(
                     context_id=named_graph.id
                 ).count()
             )
         else:
             return (
                 models.URIStatement.objects.values(
-                    'subject', 'predicate', 'object'
-                ).distinct().count() +
-                models.LiteralStatement.objects.values(
-                    'subject', 'predicate', 'object'
-                ).distinct().count())
+                    "subject", "predicate", "object"
+                )
+                .distinct()
+                .count()
+                + models.LiteralStatement.objects.values(
+                    "subject", "predicate", "object"
+                )
+                .distinct()
+                .count()
+            )
 
     ####################
     # CONTEXT MANAGEMENT
@@ -240,18 +252,17 @@ class DjangoStore(rdflib.store.Store):
     ######################
     # NAMESPACE MANAGEMENT
 
-    def bind(self, prefix, namespace):
+    def bind(self, prefix, namespace, override: bool = True):
         # is fixed
         if models.NamespaceModel.objects.filter(
-            Q(uri=namespace) | Q(prefix=prefix),
-            store__isnull=True
+            Q(uri=namespace) | Q(prefix=prefix), store__isnull=True
         ).exists():
             return
-        assert(self.store is not None)
-        models.NamespaceModel.objects.filter(
-            Q(uri=namespace) | Q(prefix=prefix),
-            store=self.store
-        ).delete()
+        assert self.store is not None
+        if override:
+            models.NamespaceModel.objects.filter(
+                Q(uri=namespace) | Q(prefix=prefix), store=self.store
+            ).delete()
         models.NamespaceModel.objects.create(
             prefix=prefix, uri=namespace, store=self.store
         )
@@ -259,8 +270,7 @@ class DjangoStore(rdflib.store.Store):
     def prefix(self, namespace):
         try:
             ns = models.NamespaceModel.objects.get(
-                Q(store=self.store) | Q(store=None),
-                uri=namespace
+                Q(store=self.store) | Q(store=None), uri=namespace
             )
             return ns.prefix
         except models.NamespaceModel.DoesNotExist:
@@ -269,8 +279,7 @@ class DjangoStore(rdflib.store.Store):
     def namespace(self, prefix):
         try:
             ns = models.NamespaceModel.objects.get(
-                Q(store=self.store) | Q(store=None),
-                prefix=prefix
+                Q(store=self.store) | Q(store=None), prefix=prefix
             )
             return ns.uri
         except models.NamespaceModel.DoesNotExist:
@@ -279,6 +288,4 @@ class DjangoStore(rdflib.store.Store):
     def namespaces(self):
         return models.NamespaceModel.objects.filter(
             Q(store=self.store) | Q(store=None)
-        ).values_list(
-            "prefix", "uri"
-        )
+        ).values_list("prefix", "uri")
