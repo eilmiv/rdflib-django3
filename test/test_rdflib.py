@@ -430,7 +430,7 @@ class ContextTest(TestCase):
         self.assertEqual(len(self.get_context(c1)), 1)
 
         self.graph.remove_context(self.get_context(c1))
-        self.assert_(self.c1 not in self.graph.contexts())
+        self.assertNotIn(self.c1, self.graph.contexts())
 
     def testRemoveAny(self):
         Any = None
