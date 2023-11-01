@@ -2,7 +2,8 @@
 Unittests for namespace management.
 """
 from django.test import TestCase
-from rdflib.graph import Graph
+from rdflib import Namespace
+from rdflib.graph import Graph, ConjunctiveGraph
 from rdflib.term import URIRef
 from rdflib_django.store import DjangoStore
 
@@ -65,3 +66,34 @@ class NamespaceTest(TestCase):
 
         g.bind(ns[0], ns[1])
         self.assertIn(ns, list(g.namespaces()))
+
+    def testConjunctiveGraph(self):
+        ex = Namespace("https://www.example.org/")
+        store1 = DjangoStore(identifier="store1")
+        store2 = DjangoStore(identifier="store2")
+
+        g1 = Graph(store1, identifier=ex.g1)
+        g2 = ConjunctiveGraph(store1, identifier=ex.g2)
+        g3 = Graph(store2, identifier=ex.g3)
+
+        g1.add((ex.a, ex.a, ex.a))
+        g2.add((ex.b, ex.b, ex.b))
+        g3.add((ex.c, ex.c, ex.c))
+
+        self.assertEquals(len(g1), 1)
+        self.assertEquals(len(g2), 2)
+        self.assertEquals(len(g3), 1)
+
+        self.assertEquals(set(g1), {(ex.a, ex.a, ex.a)})
+        self.assertEquals(set(g2), {(ex.a, ex.a, ex.a), (ex.b, ex.b, ex.b)})
+        self.assertEquals(set(g3), {(ex.c, ex.c, ex.c)})
+
+        g2.remove((None, None, None))
+
+        self.assertEquals(list(g1), [])
+        self.assertEquals(list(g2), [])
+        self.assertEquals(list(g3), [(ex.c, ex.c, ex.c)])
+
+
+
+
