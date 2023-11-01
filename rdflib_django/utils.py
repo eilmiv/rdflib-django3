@@ -8,15 +8,16 @@ from rdflib.term import URIRef
 from .store import DEFAULT_STORE, DjangoStore
 
 
-def get_conjunctive_graph(store_id=None):
+def get_conjunctive_graph(store_id=DEFAULT_STORE, identifier=None):
     """
     Returns an open conjunctive graph.
-    """
-    if not store_id:
-        store_id = DEFAULT_STORE
 
-    store = DjangoStore(DEFAULT_STORE)
-    graph = ConjunctiveGraph(store=store, identifier=store_id)
+    The returned graph reads triples from all graphs in the store.
+    Write operations happen on the graph specified by the identifier parameter
+    or a graph identified by a blank node if the identifier is not provided.
+    """
+    store = DjangoStore(identifier=store_id)
+    graph = ConjunctiveGraph(store=store, identifier=identifier)
     if graph.open(None) != VALID_STORE:
         raise ValueError(
             "The store identified by {} is not a valid store".format(store_id)
@@ -31,7 +32,7 @@ def get_named_graph(identifier, store_id=DEFAULT_STORE, create=True):
     if not isinstance(identifier, URIRef):
         identifier = URIRef(identifier)
 
-    store = DjangoStore(store_id)
+    store = DjangoStore(identifier=store_id)
     graph = Graph(store, identifier=identifier)
     if graph.open(None, create=create) != VALID_STORE:
         raise ValueError(
