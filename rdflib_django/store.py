@@ -97,12 +97,13 @@ class DjangoStore(rdflib.store.Store):
     def _get_query_sets_for_triple(self, triple, context):
         """
         Determine correct query sets based on triple and context.
-    
-        Respects None as wildcard. If the object in triple is None the resulting list has two query sets, one for 
-        Literal results and one for URIRef results.
-        
+
+        Respects None as wildcard.
+        If the object in triple is None the resulting list has two query sets,
+        one for Literal results and one for URIRef results.
+
         This method always returns a list of size at least one.
-        """  # noqa: E501
+        """
         s, p, o = triple
         named_graph = self._get_named_graph(context)
         query_sets = _get_query_sets_for_object(o)
@@ -213,8 +214,11 @@ class DjangoStore(rdflib.store.Store):
         """
         Returns the number of statements in this Graph.
         """
-        query_sets = self._get_query_sets_for_triple((None, None, None), context)
-        return sum(qs.values("subject", "predicate", "object").distinct().count() for qs in query_sets)
+        queries = self._get_query_sets_for_triple((None, None, None), context)
+        return sum(
+            qs.values("subject", "predicate", "object").distinct().count()
+            for qs in queries
+        )
 
     ####################
     # CONTEXT MANAGEMENT

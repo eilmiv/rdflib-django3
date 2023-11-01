@@ -6,11 +6,9 @@ import datetime
 
 import rdflib
 from django import test
-from rdflib.graph import Graph, ConjunctiveGraph
+from rdflib.graph import Graph
 from rdflib.namespace import RDF, RDFS, Namespace
 from rdflib.term import BNode, Literal, URIRef
-
-from rdflib_django.store import DjangoStore
 
 EX = Namespace("http://www.example.com/")
 
