@@ -95,12 +95,22 @@ class DjangoStore(rdflib.store.Store):
         )[0]
 
     def _get_query_sets_for_triple(self, triple, context):
+        """
+        Determine correct query sets based on triple and context.
+    
+        Respects None as wildcard. If the object in triple is None the resulting list has two query sets, one for 
+        Literal results and one for URIRef results.
+        
+        This method always returns a list of size at least one.
+        """  # noqa: E501
         s, p, o = triple
         named_graph = self._get_named_graph(context)
         query_sets = _get_query_sets_for_object(o)
         filter_parameters = dict()
         if named_graph is not None:
             filter_parameters["context_id"] = named_graph.id
+        else:
+            filter_parameters["context__store"] = self.store
         if s is not None:
             filter_parameters["subject"] = s
         if p is not None:
