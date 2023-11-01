@@ -94,6 +94,22 @@ class DjangoStore(rdflib.store.Store):
             identifier=context.identifier, store=self.store
         )[0]
 
+    def _get_query_sets_for_triple(self, triple, context):
+        s, p, o = triple
+        named_graph = self._get_named_graph(context)
+        query_sets = _get_query_sets_for_object(o)
+        filter_parameters = dict()
+        if named_graph is not None:
+            filter_parameters["context_id"] = named_graph.id
+        if s is not None:
+            filter_parameters["subject"] = s
+        if p is not None:
+            filter_parameters["predicate"] = p
+        if o is not None:
+            filter_parameters["object"] = o
+        query_sets = [qs.filter(**filter_parameters) for qs in query_sets]
+        return query_sets
+
     def open(self, configuration: str, create: bool = False) -> Optional[int]:
         """
         Opens the underlying store. This is only necessary when opening
@@ -167,22 +183,7 @@ class DjangoStore(rdflib.store.Store):
         """
         Removes a triple from the store.
         """
-        s, p, o = triple
-        named_graph = self._get_named_graph(context)
-        query_sets = _get_query_sets_for_object(o)
-
-        filter_parameters = dict()
-        if named_graph is not None:
-            filter_parameters["context_id"] = named_graph.id
-        if s is not None:
-            filter_parameters["subject"] = s
-        if p is not None:
-            filter_parameters["predicate"] = p
-        if o is not None:
-            filter_parameters["object"] = o
-
-        query_sets = [qs.filter(**filter_parameters) for qs in query_sets]
-
+        query_sets = self._get_query_sets_for_triple(triple, context)
         for qs in query_sets:
             qs.delete()
 
@@ -190,22 +191,7 @@ class DjangoStore(rdflib.store.Store):
         """
         Returns all triples in the current store.
         """
-        s, p, o = triple
-        named_graph = self._get_named_graph(context)
-        query_sets = _get_query_sets_for_object(o)
-
-        filter_parameters = dict()
-        if named_graph is not None:
-            filter_parameters["context_id"] = named_graph.id
-        if s is not None:
-            filter_parameters["subject"] = s
-        if p is not None:
-            filter_parameters["predicate"] = p
-        if o is not None:
-            filter_parameters["object"] = o
-
-        query_sets = [qs.filter(**filter_parameters) for qs in query_sets]
-
+        query_sets = self._get_query_sets_for_triple(triple, context)
         for qs in query_sets:
             for statement in qs:
                 triple = statement.as_triple()
@@ -217,29 +203,8 @@ class DjangoStore(rdflib.store.Store):
         """
         Returns the number of statements in this Graph.
         """
-        named_graph = self._get_named_graph(context)
-        if named_graph is not None:
-            return (
-                models.LiteralStatement.objects.filter(
-                    context_id=named_graph.id
-                ).count()
-                + models.URIStatement.objects.filter(
-                    context_id=named_graph.id
-                ).count()
-            )
-        else:
-            return (
-                models.URIStatement.objects.values(
-                    "subject", "predicate", "object"
-                )
-                .distinct()
-                .count()
-                + models.LiteralStatement.objects.values(
-                    "subject", "predicate", "object"
-                )
-                .distinct()
-                .count()
-            )
+        query_sets = self._get_query_sets_for_triple((None, None, None), context)
+        return sum(qs.values("subject", "predicate", "object").distinct().count() for qs in query_sets)
 
     ####################
     # CONTEXT MANAGEMENT
